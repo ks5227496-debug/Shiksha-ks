@@ -1,0 +1,763 @@
+# Shiksha Website — Full scaffold (Frontend + Backend)
+
+This code document contains a minimal but complete scaffold for a bilingual (Hindi/English) education website: React + Tailwind frontend and FastAPI backend (SQLite). It is designed to be easy to run locally and extend.
+
+---
+
+## Project structure
+
+```
+shiksha-project/
+├─ frontend/
+│  ├─ package.json
+│  ├─ tailwind.config.js
+│  ├─ postcss.config.js
+│  ├─ src/
+│  │  ├─ main.jsx
+│  │  ├─ App.jsx
+│  │  ├─ i18n.js
+│  │  ├─ pages/
+│  │  │  ├─ Home.jsx
+│  │  │  ├─ Login.jsx
+│  │  │  ├─ Dashboard.jsx
+│  │  │  ├─ Lesson.jsx
+│  │  │  └─ Quiz.jsx
+│  │  └─ components/
+│  │     ├─ Header.jsx
+│  │     ├─ Card.jsx
+│  │     └─ LanguageToggle.jsx
+├─ backend/
+│  ├─ requirements.txt
+│  ├─ main.py
+│  └─ seed_data.py
+└─ README.md
+```
+
+---
+
+## 1) frontend/package.json
+
+```json
+{
+  "name": "shiksha-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-router-dom": "6.14.1",
+    "axios": "1.4.0",
+    "i18next": "22.4.7",
+    "react-i18next": "12.4.3",
+    "tailwindcss": "3.5.4"
+  },
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "5.0.0",
+    "postcss": "8.4.21",
+    "autoprefixer": "10.4.14"
+  }
+}
+```
+
+---
+
+## 2) frontend/tailwind.config.js
+
+```js
+module.exports = {
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+---
+
+## 3) frontend/src/main.jsx
+
+```jsx
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App'
+import './index.css'
+import './i18n'
+
+createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+)
+```
+
+---
+
+## 4) frontend/src/i18n.js
+
+```js
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+
+const resources = {
+  en: {
+    translation: {
+      "welcome": "Welcome to Shiksha",
+      "login": "Login",
+      "logout": "Logout",
+      "dashboard": "Dashboard",
+      "lessons": "Lessons",
+      "quizzes": "Quizzes",
+      "recommend": "Recommended for you"
+    }
+  },
+  hi: {
+    translation: {
+      "welcome": "शिक्षा में आपका स्वागत है",
+      "login": "लॉगिन",
+      "logout": "लॉगआउट",
+      "dashboard": "डैशबोर्ड",
+      "lessons": "पाठ",
+      "quizzes": "प्रश्नोत्तरी",
+      "recommend": "आपके लिए अनुशंसित"
+    }
+  }
+}
+
+i18n.use(initReactI18next).init({
+  resources,
+  lng: 'hi',
+  fallbackLng: 'en',
+  interpolation: { escapeValue: false }
+})
+
+export default i18n
+```
+
+---
+
+## 5) frontend/src/App.jsx
+
+```jsx
+import React from 'react'
+import { Routes, Route, Link } from 'react-router-dom'
+import Home from './pages/Home'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import Lesson from './pages/Lesson'
+import Quiz from './pages/Quiz'
+import Header from './components/Header'
+
+export default function App(){
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <main className="container mx-auto p-4">
+        <Routes>
+          <Route path="/" element={<Home/>} />
+          <Route path="/login" element={<Login/>} />
+          <Route path="/dashboard" element={<Dashboard/>} />
+          <Route path="/lesson/:id" element={<Lesson/>} />
+          <Route path="/quiz/:id" element={<Quiz/>} />
+        </Routes>
+      </main>
+    </div>
+  )
+}
+```
+
+---
+
+## 6) frontend/src/components/Header.jsx
+
+```jsx
+import React from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import LanguageToggle from './LanguageToggle'
+import { useTranslation } from 'react-i18next'
+
+export default function Header(){
+  const { t } = useTranslation()
+  const nav = useNavigate()
+  return (
+    <header className="bg-white shadow">
+      <div className="container mx-auto flex items-center justify-between p-4">
+        <h1 className="text-xl font-semibold cursor-pointer" onClick={()=>nav('/')}>Shiksha</h1>
+        <nav className="flex items-center gap-4">
+          <Link to="/dashboard" className="text-sm">{t('dashboard')}</Link>
+          <Link to="/login" className="text-sm">{t('login')}</Link>
+          <LanguageToggle />
+        </nav>
+      </div>
+    </header>
+  )
+}
+```
+
+---
+
+## 7) frontend/src/components/LanguageToggle.jsx
+
+```jsx
+import React from 'react'
+import { useTranslation } from 'react-i18next'
+
+export default function LanguageToggle(){
+  const { i18n } = useTranslation()
+  const toggle = ()=>{
+    const next = i18n.language === 'hi' ? 'en' : 'hi'
+    i18n.changeLanguage(next)
+  }
+  return (
+    <button onClick={toggle} className="px-3 py-1 border rounded">{i18n.language==='hi'? 'EN' : 'हिन्दी'}</button>
+  )
+}
+```
+
+---
+
+## 8) frontend/src/pages/Home.jsx
+
+```jsx
+import React, {useEffect, useState} from 'react'
+import axios from 'axios'
+import { useTranslation } from 'react-i18next'
+
+export default function Home(){
+  const { t } = useTranslation()
+  const [recs, setRecs] = useState([])
+
+  useEffect(()=>{
+    axios.get('/api/recommend').then(r=>setRecs(r.data)).catch(()=>{
+      // fallback sample
+      setRecs([{content_id:'c1', title:'Fraction basics', score:0.9}])
+    })
+  },[])
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-4">{t('welcome')}</h2>
+      <section>
+        <h3 className="text-lg font-semibold">{t('recommend')}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+          {recs.map(r=> (
+            <div key={r.content_id} className="p-4 bg-white rounded shadow">
+              <h4 className="font-semibold">{r.title}</h4>
+              <p className="text-sm">Score: {Math.round((r.score||0)*100)}%</p>
+              <a className="mt-2 inline-block text-sm text-blue-600" href={`/lesson/${r.content_id}`}>Open</a>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+```
+
+---
+
+## 9) frontend/src/pages/Login.jsx
+
+```jsx
+import React, {useState} from 'react'
+import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
+
+export default function Login(){
+  const [username, setUsername] = useState('')
+  const nav = useNavigate()
+
+  const submit = async (e)=>{
+    e.preventDefault()
+    try{
+      const r = await axios.post('/api/auth', {username})
+      localStorage.setItem('token', r.data.token)
+      nav('/dashboard')
+    }catch(err){
+      alert('Login failed')
+    }
+  }
+
+  return (
+    <div className="max-w-md mx-auto bg-white p-6 rounded shadow">
+      <h3 className="text-xl font-semibold mb-3">Login</h3>
+      <form onSubmit={submit} className="space-y-3">
+        <input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Name" className="w-full p-2 border rounded" />
+        <button className="w-full p-2 bg-blue-600 text-white rounded">Login</button>
+      </form>
+    </div>
+  )
+}
+```
+
+---
+
+## 10) frontend/src/pages/Dashboard.jsx
+
+```jsx
+import React, {useEffect, useState} from 'react'
+import axios from 'axios'
+
+export default function Dashboard(){
+  const [profile, setProfile] = useState(null)
+  useEffect(()=>{
+    axios.get('/api/me').then(r=>setProfile(r.data)).catch(()=>{})
+  },[])
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold mb-4">Your Dashboard</h2>
+      {profile ? (
+        <div className="bg-white p-4 rounded shadow">
+          <p>Name: {profile.username}</p>
+          <p>Grade: {profile.grade || 'N/A'}</p>
+        </div>
+      ) : <p>Loading...</p>}
+    </div>
+  )
+}
+```
+
+---
+
+## 11) frontend/src/pages/Lesson.jsx
+
+```jsx
+import React, {useEffect, useState} from 'react'
+import { useParams } from 'react-router-dom'
+import axios from 'axios'
+
+export default function Lesson(){
+  const { id } = useParams()
+  const [content, setContent] = useState(null)
+  useEffect(()=>{
+    axios.get(`/api/content/${id}`).then(r=>setContent(r.data)).catch(()=>setContent({title:'Sample', body:'This is a sample lesson.'}))
+  },[id])
+  return (
+    <div className="bg-white p-6 rounded shadow">
+      <h2 className="text-xl font-bold">{content?.title}</h2>
+      <div className="mt-3" dangerouslySetInnerHTML={{__html: content?.body}} />
+    </div>
+  )
+}
+```
+
+---
+
+## 12) frontend/src/pages/Quiz.jsx
+
+```jsx
+import React, {useEffect, useState} from 'react'
+import { useParams } from 'react-router-dom'
+import axios from 'axios'
+
+export default function Quiz(){
+  const { id } = useParams()
+  const [quiz, setQuiz] = useState(null)
+  useEffect(()=>{
+    axios.get(`/api/quiz/${id}`).then(r=>setQuiz(r.data)).catch(()=>setQuiz({title:'Sample Quiz', questions:[]}))
+  },[id])
+
+  const submitAttempt = async (attempt)=>{
+    await axios.post('/api/attempt', attempt)
+    alert('Submitted')
+  }
+
+  return (
+    <div className="bg-white p-6 rounded shadow">
+      <h2 className="text-xl font-bold">{quiz?.title}</h2>
+      <p className="mt-3">Questions will appear here.</p>
+    </div>
+  )
+}
+```
+
+---
+
+## 13) frontend/src/index.css
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+```
+
+---
+
+## 14) backend/requirements.txt
+
+```
+fastapi
+uvicorn[standard]
+sqlalchemy
+databases
+pydantic
+python-multipart
+```
+
+---
+
+## 15) backend/main.py
+
+```py
+from fastapi import FastAPI, HTTPException, Depends, Request
+from pydantic import BaseModel
+from typing import List
+import sqlite3
+import uuid
+import time
+
+app = FastAPI()
+DB = 'shiksha.db'
+
+# Simple helper functions (synchronous sqlite for demo)
+def get_conn():
+    conn = sqlite3.connect(DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+class AuthIn(BaseModel):
+    username: str
+
+@app.post('/api/auth')
+def auth(payload: AuthIn):
+    # naive: create user if not exists and return token
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute('CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, username TEXT, grade TEXT)')
+    cur.execute('SELECT id FROM users WHERE username=?', (payload.username,))
+    row = cur.fetchone()
+    if row:
+        uid = row['id']
+    else:
+        uid = str(uuid.uuid4())
+        cur.execute('INSERT INTO users (id, username) VALUES (?,?)', (uid, payload.username))
+        conn.commit()
+    token = uid
+    return {'token': token}
+
+@app.get('/api/me')
+def me(token: str = None):
+    # token from header or query (simple demo)
+    if not token:
+        return {'username': 'Guest'}
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute('SELECT username, grade FROM users WHERE id=?', (token,))
+    row = cur.fetchone()
+    if not row:
+        return {'username': 'Guest'}
+    return {'username': row['username'], 'grade': row['grade']}
+
+@app.get('/api/recommend')
+def recommend():
+    # simple placeholder: return seeded content
+    return [
+        {'content_id':'c1','title':'Fraction basics','score':0.92},
+        {'content_id':'c2','title':'Adding fractions','score':0.86}
+    ]
+
+@app.get('/api/content/{content_id}')
+def get_content(content_id: str):
+    # in production fetch from DB
+    sample = {
+        'c1': {'content_id':'c1','title':'Fraction basics','body':'<p>Fractions are parts of whole...</p>'},
+        'c2': {'content_id':'c2','title':'Adding fractions','body':'<p>To add fractions...</p>'}
+    }
+    return sample.get(content_id, {'content_id':content_id,'title':'Not found','body':'<p>Not found</p>'})
+
+@app.post('/api/attempt')
+def submit_attempt(payload: dict):
+    # store attempt (demo)
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute('CREATE TABLE IF NOT EXISTS attempts (id TEXT PRIMARY KEY, user_id TEXT, content_id TEXT, correct INTEGER, ts INTEGER)')
+    aid = str(uuid.uuid4())
+    cur.execute('INSERT INTO attempts (id, user_id, content_id, correct, ts) VALUES (?,?,?,?,?)',
+                (aid, payload.get('user_id'), payload.get('content_id'), int(payload.get('correct',0)), int(time.time())))
+    conn.commit()
+    return {'status':'ok'}
+
+@app.get('/api/quiz/{quiz_id}')
+def get_quiz(quiz_id: str):
+    sample = {'title':'Sample Quiz','questions':[{'id':'q1','text':'2+2?','choices':['3','4','5'],'answer':1}]}
+    return sample
+```
+
+---
+
+## 16) backend/seed_data.py
+
+```py
+import sqlite3
+DB='shiksha.db'
+conn=sqlite3.connect(DB)
+cur=conn.cursor()
+cur.execute('CREATE TABLE IF NOT EXISTS content (id TEXT PRIMARY KEY, title TEXT, text TEXT, topic TEXT)')
+cur.execute("INSERT OR REPLACE INTO content (id,title,text,topic) VALUES ('c1','Fraction basics','Fractions...','math')")
+cur.execute("INSERT OR REPLACE INTO content (id,title,text,topic) VALUES ('c2','Adding fractions','Add fractions...','math')")
+conn.commit()
+print('seeded')
+```
+
+---
+
+## 17) README.md (run instructions)
+
+```
+# Run backend
+python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+pip install -r backend/requirements.txt
+python backend/seed_data.py
+uvicorn backend.main:app --reload --port 8000
+
+# Run frontend
+cd frontend
+npm install
+npm run start
+
+# Notes
+- Frontend expects backend proxied at /api — in development use Vite proxy or set full URL to http://localhost:8000
+- This scaffold is minimal and designed for quick iteration. Replace auth with JWT or proper OAuth for production.
+```
+
+---
+
+## 18) Next steps & suggestions
+- Add proper auth (JWT), user roles (student/teacher/admin). 
+- Replace sync sqlite with SQLAlchemy/async and migrations.
+- Implement real recommender (content embeddings, collaborative filter) and knowledge tracing (BKT/DKT).
+- Add unit tests and CI, and deploy: Vercel for frontend, Render/Heroku for backend.
+
+---
+
+Happy to extend: I can (choose one and I'll add it next):
+- a) full JWT auth and protected endpoints
+- b) a simple DKT model training script and integration
+- c) a deploy-ready Dockerfile + docker-compose
+
+
+
+
+---
+
+# Option A — Single-host Docker Compose (production-ready) — Added files & instructions
+
+Main aapke canvas scaffold ko Option A ke liye expand kar raha hoon: yeh section aapki repository mein add/replace karne ke liye full production files aur deploy scripts deta hai. Sab Hindi mein aur copy-paste ready.
+
+## 1) `docker-compose.yml` (production)
+
+```yaml
+version: '3.8'
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: shiksha_backend
+    restart: unless-stopped
+    volumes:
+      - ./backend/shiksha.db:/app/shiksha.db
+      - ./backend/logs:/app/logs
+    environment:
+      - PORT=8000
+      - DATABASE_URL=sqlite:///app/shiksha.db
+      - SECRET_KEY=change-me
+    networks:
+      - shiksha_net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: shiksha_frontend
+    restart: unless-stopped
+    networks:
+      - shiksha_net
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: shiksha_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./infra/nginx/html:/usr/share/nginx/html:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - shiksha_net
+
+networks:
+  shiksha_net:
+    driver: bridge
+```
+
+> नोट: `/etc/letsencrypt` को host machine से माउंट कर रहे हैं — ये certbot से बनाए गए certs रखेगा।
+
+---
+
+## 2) `infra/nginx/prod.conf` (update `your-domain.example`)
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.example www.your-domain.example;
+    # Redirect all HTTP to HTTPS
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name your-domain.example www.your-domain.example;
+
+    ssl_certificate /etc/letsencrypt/live/your-domain.example/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.example/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    # static frontend
+    location / {
+        proxy_pass http://shiksha_frontend:80;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # API
+    location /api/ {
+        proxy_pass http://shiksha_backend:8000/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # healthcheck
+    location /healthz {
+        proxy_pass http://shiksha_backend:8000/healthz;
+    }
+}
+```
+
+---
+
+## 3) Certbot helper script (host) — `infra/certbot_issue.sh`
+
+यह script VPS पर चलाएँ ताकि Let's Encrypt cert issue कर सकें।
+
+```bash
+#!/bin/bash
+set -e
+DOMAIN=$1
+if [ -z "$DOMAIN" ]; then
+  echo "Usage: $0 your-domain.example"
+  exit 1
+fi
+
+# stop docker nginx if it's using port 80
+echo "Stopping nginx container (if running) to free port 80..."
+docker rm -f shiksha_nginx || true
+
+# request cert (standalone)
+sudo certbot certonly --standalone -d $DOMAIN -d www.$DOMAIN --non-interactive --agree-tos -m your-email@example.com
+
+# after success, certs are in /etc/letsencrypt/live/$DOMAIN/
+# make sure docker-compose mounts /etc/letsencrypt
+
+echo "Certificates obtained. Don't forget to restart docker compose: docker compose up -d"
+```
+
+> **Important:** certbot needs port 80 free. Temporary stop nginx container or use certbot's `--nginx` plugin if nginx is on host (not in docker). We are using standalone method above.
+
+---
+
+## 4) Healthcheck endpoint (backend)
+
+`backend/main.py` में ek simple endpoint add करें:
+
+```py
+@app.get('/healthz')
+def health():
+    return {'status':'ok'}
+```
+
+यह nginx config में भी proxy किया गया है — docker-compose के health check के लिए useful है।
+
+---
+
+## 5) `infra/deploy.sh` — one-shot deploy on VPS
+
+```bash
+#!/bin/bash
+set -e
+# Usage: ./deploy.sh your-domain.example
+DOMAIN=$1
+if [ -z "$DOMAIN" ]; then
+  echo "Usage: $0 your-domain.example"
+  exit 1
+fi
+
+# 1. build and start containers (nginx may error before certs exist - that's OK)
+docker compose up -d --build
+
+# 2. Issue certs using certbot (this will stop nginx container if it listens on 80)
+./infra/certbot_issue.sh $DOMAIN
+
+# 3. restart compose so nginx picks up certs
+docker compose down
+docker compose up -d --build
+
+echo "Deployment complete. Visit https://$DOMAIN"
+```
+
+Give this file executable: `chmod +x infra/deploy.sh` and `chmod +x infra/certbot_issue.sh`.
+
+---
+
+## 6) Replace demo SQLite with PostgreSQL (recommended)
+
+Production में SQLite concurrency issues दे सकता है। PostgreSQL use करने के लिए steps:
+
+1. VPS पर PostgreSQL install करें या managed DB (DigitalOcean, Render) लें।
+2. `DATABASE_URL=postgresql://user:pass@host:5432/shiksha` set करें in `docker-compose.yml` (or in host env). 
+3. Backend code में `sqlite` specific paths हटाकर SQLAlchemy के माध्यम से `DATABASE_URL` पढ़ें।
+
+यदि आप चाहें तो मैं a) `docker-compose` में `postgres` service जोड़ दूँ (single-host db), और b) backend code को SQLAlchemy/Databases async से बदलकर migration script (alembic) जोड़ दूँ — बताइए तो मैं add कर दूँ।
+
+---
+
+## 7) Post-deploy checklist
+- सुनिश्चित करें `infra/nginx/prod.conf` में domain सही है।
+- `backend/requirements.txt` में production-only लाइब्रेरी जोड़ें (psycopg2-binary अगर postgres use कर रहे हैं)।
+- `SECRET_KEY` environment var बदलें और सुरक्षित रखें।
+- Set up `certbot renew` cron: `0 3 * * * /usr/bin/certbot renew --quiet`.
+- Configure firewall (allow 80,443 only).
+
+---
+
+## 8) Next actions (मैं कर सकता हूँ — pick from these)
+1. **मैं docker-compose में PostgreSQL service जोड़ दूँ** और backend को SQLAlchemy से connect कर दूँ.  
+2. **मैं deploy.sh को GitHub Actions workflow में बदल दूँ** ताकि push पर VPS पर automatic deploy हो (requires SSH key).  
+3. **मैं JWT auth और production env var handling** add kar doon (recommended).  
+
+Aap bataiye kaunsa next chahenge — main turant add kar dunga. Agar theek lage, main abhi `postgres` add kar du? 
+
+---
+
